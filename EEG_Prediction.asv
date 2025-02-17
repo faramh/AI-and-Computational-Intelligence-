@@ -1,0 +1,318 @@
+%AI and Computaational intelligence Final project 
+%Mohamad Hosein Faramarzi - 99104095
+%% Load data set 
+
+% Load the data
+DataSet=load('I:\Portal\Artificial Intelligence\Project\Cl_Project\Project_data.mat');
+
+Train_Data=DataSet.TrainData;
+Train_Labels=DataSet.TrainLabels;
+Test_Data=DataSet.TestData;
+Frequency=DataSet.fs;
+Channels=DataSet.Channels;
+
+
+%% Plotting Some samples 
+
+
+% Plotting the first channel of the first observation
+Fs = 1000;
+t = 1/Fs:1/Fs:5;
+tiledlayout(2,1)
+
+nexttile
+plot(t, Train_Data(1,:,1));
+xlabel('t(s)');
+title('The First Channel of The 1st Observation');
+grid minor 
+
+nexttile
+plot(t, Train_Data(1,:,3));
+xlabel('t(s)');
+title('The First Channel of The 3rd Observation');
+grid minor 
+
+
+%% Training Data Feature Extraction 
+
+
+
+
+Experiments_number = size(Train_Data,3);
+Chanells_number=size(Train_Data,1);
+for m = 1:Experiments_number
+    
+    for i = 1:Chanells_number
+        
+        %Mean
+        Mean(i,m)= mean(Train_Data(i,:,m));
+        
+        %Mode
+        Mode(i,m)= mode(Train_Data(i,:,m));
+        
+        %Variance
+        Var(i,m)= var(Train_Data(i,:,m));
+        
+        
+        %Median
+        Median(i,m) = median(Train_Data(i,:,m));
+        
+        %Skewness
+        Skewness(i,m) = skewness(Train_Data(i,:,m));
+        
+        %Kurtosis
+        Kurtosis(i,m) = kurtosis(Train_Data(i,:,m));
+        
+        %Max
+        [Max(i,m),MaxTime(i,m)] = max(Train_Data(i,:,m));
+        
+        %Min
+        [Min(i,m),MinTime(i,m)] = min(Train_Data(i,:,m));
+        
+        %Energy
+        Energy(i,m) = sum(square(Train_Data(i,:,m)));
+        
+        
+        %AvgPower
+        AveragePower(i,m) = meansqr(Train_Data(i,:,m));
+        
+        %RMS
+        RMS(i,m) = rms(Train_Data(i,:,m));
+        
+        %Correlation
+        for j = 1:i
+            Correlation((i-1)*30+j,m) = corr(Train_Data(i,:,m)',Train_Data(j,:,m)');
+        end
+        
+        %Moment
+        Moment(i,m) = moment(Train_Data(i,:,m),3);
+        
+        %FF
+        FormFactor(i,m) = sqrt(var(diff(Train_Data(i,:,m)))).^2./...
+            (std(diff(diff(Train_Data(i,:,m))))*sqrt(var(Train_Data(i,:,m))));
+        
+        %Frequency Mean
+        FreqMean(i,m) = meanfreq(Train_Data(i,:,m));
+        
+        %Median Frequency
+        FreqMedian(i,m) = medfreq(Train_Data(i,:,m));
+        
+        %Periodogram
+        Periodogram(i,m,:) = periodogram(Train_Data(i,:,m));
+        
+        %PeakFrequency
+        [PeakFrequency(i,m), MaxFreqIndex(i,m)] = max(Periodogram(i,m,:));
+        
+        %AR Model
+        aR = ar(Train_Data(i,:,m),4);
+        AR(i,m) = mean(aR.A);
+        
+        %Band Power
+        BandPower(i,m) = bandpower(Train_Data(i,:,m));
+        
+    end
+    
+end
+
+%NonLinear Energy
+for m = 1:n
+    
+    for i = 2: size(Train_Data,1)-1
+        %Nonlinear Energy
+        NonlinearEnergy(i,m) = sum(square(Train_Data(i,:,m)) - Train_Data(i+1,:,m).*Train_Data(i-1,:,m));
+    end
+    NonlinearEnergy(30,:) = NonlinearEnergy(29,m);
+end
+
+%Time Features
+
+TimeFeatures = [Mean
+    Var
+    Mode
+    Median
+    Skewness
+    Kurtosis
+    Max
+    MaxTime
+    Min
+    MinTime
+    Energy
+    AveragePower
+    RMS
+    Correlation
+    Moment
+    FormFactor
+    NonlinearEnergy
+    AR
+    ];
+
+%Frequency Features
+FrequencyFeatures = [FreqMean
+    FreqMedian;
+    PeakFrequency
+    MaxFreqIndex
+    BandPower
+    ];
+
+
+%Normalizing Time Features
+TimeFeatures = mapstd(TimeFeatures,0,1);
+TimeFeatures = mapminmax(TimeFeatures);
+
+
+%Normalizing Frequency Features
+FrequencyFeatures = mapstd(FrequencyFeatures,0,1);
+FrequencyFeatures= mapminmax(FrequencyFeatures);
+
+save('FrequencyFeatures','FrequencyFeatures')
+save('TimeFeatures','TimeFeatures')
+
+%% Test Data feature extraction
+clc;
+clear;
+
+TestData =  DataSet.TestData;
+
+Test_Features = [] ;
+Num_Test = size(TestData,3);
+
+for m = 1:Num_Test
+    
+    for i = 1: size(TestData,1)
+        
+        %Mean
+        Mean_Test(i,m)= mean(TestData(i,:,m));
+        
+        %Variance
+        Var_Test(i,m)= var(TestData(i,:,m));
+        
+        %Mode
+        Mode_Test(i,m)= mode(TestData(i,:,m));
+        
+        %Median
+        Median_Test(i,m) = median(TestData(i,:,m));
+        
+        %Skewness
+        Skewness_Test(i,m) = skewness(TestData(i,:,m));
+        
+        %Kurtosis
+        Kurtosis_Test(i,m) = kurtosis(TestData(i,:,m));
+        
+        %Max
+        [Max_Test(i,m),MaxTime_Test(i,m)] = max(TestData(i,:,m));
+        
+        %Min
+        [Min_Test(i,m),MinTime_Test(i,m)] = min(TestData(i,:,m));
+        
+        %Energy
+        Energy_Test(i,m) = sum(square(TestData(i,:,m)));
+        
+        
+        %AvgPower
+        AveragePower_Test(i,m) = meansqr(TestData(i,:,m));
+        
+        %RMS
+        RMS_Test(i,m) = rms(TestData(i,:,m));
+        
+        %Correlation
+        for j = 1:size(TestData,1)
+            Correlation_Test((i-1)*30+j,m) = corr(TestData(i,:,m)',TestData(j,:,m)');
+        end
+        
+        %Moment
+        Moment_Test(i,m) = moment(TestData(i,:,m),3);
+        
+        %FF
+        FormFactor_Test(i,m) = sqrt(var(diff(TestData(i,:,m)))).^2./...
+            (std(diff(diff(TestData(i,:,m))))*sqrt(var(TestData(i,:,m))));
+        
+        %Frequency Mean
+        FreqMean_Test(i,m) = meanfreq(TestData(i,:,m));
+        
+        %Median Frequency
+        FreqMedian_Test(i,m) = medfreq(TestData(i,:,m));
+        
+        %Periodogram
+        Periodogram_Test(i,m,:) = periodogram(TestData(i,:,m));
+        
+        %PeakFrequency
+        [PeakFrequency_Test(i,m), MaxFreqIndex_Test(i,m)] = max(Periodogram_Test(i,m,:));
+        
+        %AR Model
+        aR_Test = ar(TestData(i,:,m),4);
+        AR_Test(i,m) = mean(aR_Test.A);
+        
+        %Band Power
+        BandPower_Test(i,m) = bandpower(TestData(i,:,m));
+        
+    end
+    
+end
+
+%NonLinear Energy
+for m = 1:Num_Test
+    
+    for i = 2: size(TestData,1)-1
+        %Nonlinear Energy
+        NonlinearEnergy_Test(i,m) = sum(square(TestData(i,:,m)) ...
+            - TestData(i+1,:,m).*TestData(i-1,:,m));
+    end
+    NonlinearEnergy_Test(30,:) = NonlinearEnergy_Test(29,m);
+end
+
+%Time Features
+TimeFeatures_Test = [Mean_Test
+    Var_Test
+    Mode_Test
+    Median_Test
+    Skewness_Test
+    Kurtosis_Test
+    Max_Test
+    MaxTime_Test
+    Min_Test
+    MinTime_Test
+    Energy_Test
+    AveragePower_Test
+    RMS_Test
+    Correlation_Test
+    Moment_Test
+    FormFactor_Test
+    NonlinearEnergy_Test
+    AR_Test
+    ];
+
+%Frequency Features
+FrequencyFeatures_Test = [FreqMean_Test
+    FreqMedian_Test
+    PeakFrequency_Test
+    MaxFreqIndex_Test
+    BandPower_Test
+    ];
+
+%Normalizing Time Features
+TimeFeatures_Test = mapstd(TimeFeatures_Test,0,1);
+TimeFeatures_Test = mapminmax(TimeFeatures_Test);
+
+
+%Normalizing Frequency Features
+FrequencyFeatures_Test = mapstd(FrequencyFeatures_Test,0,1);
+FrequencyFeatures_Test = mapminmax(FrequencyFeatures_Test);
+
+save('FrequencyFeatures_Test','FrequencyFeatures_Test')
+save('TimeFeatures_Test','TimeFeatures_Test')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%
